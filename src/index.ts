@@ -5,46 +5,22 @@ import {
     Connection,
     PublicKey,
     LAMPORTS_PER_SOL,
-    ParsedAccountData,
-    AccountInfo,
-    ComputeBudgetInstruction,
     ComputeBudgetProgram,
     TransactionMessage,
     sendAndConfirmRawTransaction,
     TransactionInstruction,
     VersionedTransaction,
     SystemProgram,
-    sendAndConfirmTransaction,
-    AddressLookupTableProgram,
-    AddressLookupTableAccount
 } from "@solana/web3.js";
-
-import {
-    createAssociatedTokenAccountIdempotent,
-    createAssociatedTokenAccountIdempotentInstruction,
-    createAssociatedTokenAccountInstruction,
-    createTransferInstruction,
-    getAccount,
-    getAssociatedTokenAddress,
-    getAssociatedTokenAddressSync,
-    getMint,
-    TOKEN_2022_PROGRAM_ID,
-    TOKEN_PROGRAM_ID,
-    getExtensionTypes,
-    getExtensionData,
-    ExtensionType,
-    getTokenMetadata,
-} from "@solana/spl-token";
 
 import bs58 from 'bs58';
 
 import {
     BLOCK_ENGINE_URL,
-    BOT_FEE_WALLET,
     ComputeUnitLimit,
     ComputeUnitPrice,
-    DEV_WALLET_KEY,
     JITO_BUNDLE_TIP,
+    JITO_FLAG,
     SOLANA_RPC_URL
 } from './constant';
 
@@ -65,26 +41,24 @@ export const getConnection = () => {
     return connections[0];
 }
 
-export async function sendSol(walletKey: string, toAddress: string, solAmount: number) {
+export async function sendAdvancedTransaction(walletKey: string, instrunctions: any[]) {
 
     try {
         const walletKeypair = Keypair.fromSecretKey(bs58.decode(walletKey));
-        const solBalance = await getSolBalance(walletKeypair.publicKey.toString());
 
-        const instrunctions = [];
-        instrunctions.push(
-            ComputeBudgetProgram.setComputeUnitLimit({
-                units: ComputeUnitLimit
-            }),
-            ComputeBudgetProgram.setComputeUnitPrice({
-                microLamports: ComputeUnitPrice
-            }),
-            SystemProgram.transfer({
-                fromPubkey: walletKeypair.publicKey,
-                toPubkey: new PublicKey(toAddress),
-                lamports: solAmount * LAMPORTS_PER_SOL
-            })
-        );
+        if (JITO_FLAG) {
+            instrunctions.push(
+                ComputeBudgetProgram.setComputeUnitLimit({
+                    units: ComputeUnitLimit
+                }),
+                ComputeBudgetProgram.setComputeUnitPrice({
+                    microLamports: ComputeUnitPrice
+                })
+            );
+        } else {
+            const tipInstruction = getTipInstruction(walletKeypair.publicKey, JITO_BUNDLE_TIP);
+            instrunctions.push(tipInstruction);
+        }
 
         const connection = getConnection();
 
@@ -92,9 +66,15 @@ export async function sendSol(walletKey: string, toAddress: string, solAmount: n
 
         txFinal.sign([walletKeypair]);
 
-        const hash = await connection.sendTransaction(txFinal);
+        let hash = '';
 
-        await connection.confirmTransaction(hash, 'confirmed');
+        if (JITO_FLAG) {
+            createAndSendBundle([txFinal]);
+        } else {
+            hash = await connection.sendTransaction(txFinal);
+
+            await connection.confirmTransaction(hash, 'confirmed');
+        }
 
         return { result: true, txhash: hash };
     } catch (e) {
