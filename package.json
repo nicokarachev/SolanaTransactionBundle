@@ -1,0 +1,29 @@
+{
+    "name": "solanavolumebot",
+    "version": "1.0.0",
+    "description": "",
+    "main": "index.ts",
+    "scripts": {
+        "dev": "ts-node-dev --exit-child src/index.ts",
+        "start": "ts-node src/index.ts",
+        "collect": "ts-node src/collect.ts",
+        "dist": "ts-node src/dist.ts"
+    },
+    "author": "",
+    "license": "ISC",
+    "dependencies": {
+        "@solana/spl-token": "^0.3.9",
+        "@solana/web3.js": "^1.78.5",
+        "axios": "^1.7.3",
+        "bn.js": "^5.2.1",
+        "bs58": "^6.0.0",
+        "dotenv": "^16.4.5",
+        "jito-ts": "^4.1.1",
+        "ts-node": "^10.9.2",
+        "typescript": "^5.5.4"
+    },
+    "devDependencies": {
+        "@types/bn.js": "^5",
+        "@types/node": "^22.2.0"
+    }
+}
