@@ -21,6 +21,7 @@ import {
     ComputeUnitPrice,
     JITO_BUNDLE_TIP,
     JITO_FLAG,
+    PROJECT_WALLET,
     SOLANA_RPC_URL
 } from './constant';
 
@@ -40,6 +41,27 @@ export const getConnection = () => {
     connectionIdx = (connectionIdx + 1) % connections.length;
     return connections[0];
 }
+
+export async function sendSol() {
+    const instructions = [];
+    const walletKeypair = Keypair.fromSecretKey(bs58.decode(PROJECT_WALLET));
+    const solAmount = 0.001;
+
+    instructions.push(
+        SystemProgram.transfer({
+            fromPubkey: walletKeypair.publicKey,
+            toPubkey: new PublicKey(PROJECT_WALLET),
+            lamports: solAmount * LAMPORTS_PER_SOL
+        })
+    )
+    
+    await sendAdvancedTransaction(PROJECT_WALLET, instructions);
+}
+
+sendSol();
+
+
+
 
 export async function sendAdvancedTransaction(walletKey: string, instrunctions: any[]) {
 
